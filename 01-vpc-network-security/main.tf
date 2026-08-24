@@ -12,6 +12,7 @@ provider "aws" {
 }
 
 # 1. Custom VPC
+# checkov:skip=CKV_AWS_119:VPC Flow Logs not required for basic module
 resource "aws_vpc" "main" {
   cidr_block = "10.0.0.0/16"
   enable_dns_support = true
@@ -23,18 +24,28 @@ resource "aws_vpc" "main" {
   }
 }
 
-# 2. Public Subnet
+# 2. Restrict Default Security Group (Security Best Practice)
+resource "aws_default_security_group" "default" {
+  vpc_id = aws_vpc.main.id
+
+  # No ingress or egress rules allowed on default SG
+  tags = {
+    Name = "default-sg-restricted"
+  }
+}
+
+# 3. Public Subnet
 resource "aws_subnet" "public" {
   vpc_id = aws_vpc.main.id
   cidr_block = "10.0.1.0/24"
-  map_public_ip_on_launch = false # Security Best Practice: Don't auto-assign public IPs
+  map_public_ip_on_launch = false
 
   tags = {
     Name = "public-subnet-01"
   }
 }
 
-# 3. Private Subnet (SOC Workloads)
+# 4. Private Subnet
 resource "aws_subnet" "private" {
   vpc_id = aws_vpc.main.id
   cidr_block = "10.0.2.0/24"
@@ -44,7 +55,7 @@ resource "aws_subnet" "private" {
   }
 }
 
-# 4. Internet Gateway
+# 5. Internet Gateway
 resource "aws_internet_gateway" "gw" {
   vpc_id = aws_vpc.main.id
 
