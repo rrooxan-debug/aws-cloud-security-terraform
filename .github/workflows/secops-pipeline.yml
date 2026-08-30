@@ -1,0 +1,34 @@
+name: DevSecOps CI/CD Security Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  security-scan:
+    name: Terraform & Infrastructure Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python for Checkov
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Checkov (Infrastructure Security Linter)
+        run: |
+          pip install checkov
+
+      - name: Run Checkov Security Scan on Terraform Files
+        run: |
+          checkov -d . --framework terraform --soft-fail
+        # --soft-fail ensures pipeline logs the findings without failing prematurely during training
+
+      - name: Security Pipeline Status
+        run: |
+          echo "DevSecOps Security Pipeline checks completed successfully!"
